@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
-const multer = require('multer')
+const multer = require('multer');
+const multerS3 = require('multer-s3')
+const aws = require('aws-sdk')
 const shortid = require('shortid')
 const path = require('path')
 
@@ -15,13 +17,36 @@ const storage = multer.diskStorage({
 })
 const upload = multer({storage})
 
+const s3 = new aws.S3({
+    credentials:{
+        accessKeyId:'AKIAQMKRKFI64MGGSPPT',
+        secretAccessKey:'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'
+    },
+})
+
+const uploadS3 = multer(
+    {
+    storage: multerS3({
+        s3: s3,
+        bucket: 'shopping-cart-shop',
+        contentType: multerS3.AUTO_CONTENT_TYPE,
+        acl:'public-read',
+        metadata: function (req, file, cb) {
+            console.log(file)
+            cb(null, {fieldName: file.fieldname});
+        },
+        key: function (req, file, cb) {
+            console.log(file)
+            cb(null, shortid.generate()+"-"+file.originalname)
+        }
+    })
+});
 
 const requireSignIn = (req, res, next) => {
     if (req.headers.authorization) {
         const token = req.headers.authorization.split(" ")[1];
         const user = jwt.verify(token, process.env.JWT_SECRET);
         req.user = user
-        console.log(req.user)
     } else {
         return res.status(400).json({message: 'Authorization required'})
     }
@@ -50,5 +75,6 @@ module.exports = {
     requireSignIn,
     adminMiddleware,
     userMiddleware,
-    upload
+    upload,
+    uploadS3
 }

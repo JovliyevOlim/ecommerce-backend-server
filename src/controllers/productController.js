@@ -8,14 +8,13 @@ const createProduct = (req, res) => {
 
     let productPictures = [];
 
-    console.log(req.body)
-
     if (req.files?.length > 0) {
         productPictures = req.files.map(file => {
-            return {img: file.filename}
+            return {img: file.location}
         })
     }
 
+    console.log(productPictures)
 
     const product = new Product({
         name: name,
@@ -26,7 +25,7 @@ const createProduct = (req, res) => {
     product.save(((error, product) => {
         if (error) return res.status(400).json({error});
         if (product) {
-            res.status(201).json({product})
+            res.status(201).json({product,files:req.files})
         }
     }))
 }
